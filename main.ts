@@ -37,6 +37,24 @@ if (codePoints < 1 || codePoints > MAX_CODE_POINTS) {
 if (TEXT.trim().length === 0) {
   throw new Error('entry text is only white space');
 }
+// The gate also rejects stray control characters and trailing blank lines,
+// so guard the text itself, not just its length: no control characters
+// other than the single trailing newline, and no line that is blank or
+// ends in a space. A quiet text should arrive clean.
+for (const [i, ch] of [...FILE_TEXT].entries()) {
+  const code = ch.codePointAt(0);
+  if (code !== undefined && code < 0x20 && ch !== '\n') {
+    throw new Error(`entry.txt holds a control character U+${code.toString(16)} at code point ${i}`);
+  }
+}
+for (const line of TEXT.split('\n')) {
+  if (line !== line.trimEnd()) {
+    throw new Error('entry.txt holds a line with trailing white space');
+  }
+  if (line.trim().length === 0) {
+    throw new Error('entry.txt holds a blank line');
+  }
+}
 
 const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 mkdirSync(outDir, { recursive: true });
